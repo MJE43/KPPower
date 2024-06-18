@@ -13,6 +13,8 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import { GraphQLUpload } from "graphql-upload";
+import { FileUpload } from "src/storage/base/storage.types";
 import { PhotoGallery } from "./PhotoGallery";
 import { PhotoGalleryCountArgs } from "./PhotoGalleryCountArgs";
 import { PhotoGalleryFindManyArgs } from "./PhotoGalleryFindManyArgs";
@@ -95,5 +97,26 @@ export class PhotoGalleryResolverBase {
       }
       throw error;
     }
+  }
+
+  @graphql.Mutation(() => PhotoGallery)
+  async uploadImageUrl(
+    @graphql.Args({
+      name: "file",
+      type: () => GraphQLUpload,
+    })
+    file: FileUpload,
+    @graphql.Args()
+    args: PhotoGalleryFindUniqueArgs
+  ): Promise<PhotoGallery> {
+    return await this.service.uploadImageUrl(args, file);
+  }
+
+  @graphql.Mutation(() => PhotoGallery)
+  async deleteImageUrl(
+    @graphql.Args()
+    args: PhotoGalleryFindUniqueArgs
+  ): Promise<PhotoGallery> {
+    return await this.service.deleteImageUrl(args);
   }
 }

@@ -11,9 +11,16 @@ https://docs.amplication.com/how-to/custom-code
   */
 import { PrismaService } from "../../prisma/prisma.service";
 import { Prisma, PhotoGallery as PrismaPhotoGallery } from "@prisma/client";
+import { LocalStorageService } from "src/storage/providers/local/local.storage.service";
+import { InputJsonValue } from "src/types";
+import { FileDownload, FileUpload } from "src/storage/base/storage.types";
+import { LocalStorageFile } from "src/storage/providers/local/local.storage.types";
 
 export class PhotoGalleryServiceBase {
-  constructor(protected readonly prisma: PrismaService) {}
+  constructor(
+    protected readonly prisma: PrismaService,
+    protected readonly localStorageService: LocalStorageService
+  ) {}
 
   async count(
     args: Omit<Prisma.PhotoGalleryCountArgs, "select">
@@ -45,5 +52,61 @@ export class PhotoGalleryServiceBase {
     args: Prisma.PhotoGalleryDeleteArgs
   ): Promise<PrismaPhotoGallery> {
     return this.prisma.photoGallery.delete(args);
+  }
+
+  async uploadImageUrl<T extends Prisma.PhotoGalleryFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PhotoGalleryFindUniqueArgs>,
+    file: FileUpload
+  ): Promise<PrismaPhotoGallery> {
+    file.filename = `profilePicture-${args.where.id}.${file.filename
+      .split(".")
+      .pop()}`;
+    const containerPath = "imageUrl";
+    const imageUrl = await this.localStorageService.uploadFile(
+      file,
+      [],
+      1000000,
+      containerPath
+    );
+
+    return await this.prisma.photoGallery.update({
+      where: args.where,
+
+      data: {
+        imageUrl: imageUrl as InputJsonValue,
+      },
+    });
+  }
+
+  async downloadImageUrl<T extends Prisma.PhotoGalleryFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PhotoGalleryFindUniqueArgs>
+  ): Promise<FileDownload> {
+    const { imageUrl } = await this.prisma.photoGallery.findUniqueOrThrow({
+      where: args.where,
+    });
+
+    return await this.localStorageService.downloadFile(
+      imageUrl as unknown as LocalStorageFile
+    );
+  }
+
+  async deleteImageUrl<T extends Prisma.PhotoGalleryFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PhotoGalleryFindUniqueArgs>
+  ): Promise<PrismaPhotoGallery> {
+    const { imageUrl } = await this.prisma.photoGallery.findUniqueOrThrow({
+      where: args.where,
+    });
+
+    await this.localStorageService.deleteFile(
+      imageUrl as unknown as LocalStorageFile
+    );
+
+    return await this.prisma.photoGallery.update({
+      where: args.where,
+
+      data: {
+        imageUrl: Prisma.DbNull,
+      },
+    });
   }
 }

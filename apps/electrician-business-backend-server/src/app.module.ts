@@ -1,3 +1,4 @@
+import { RabbitMQModule } from "./rabbitmq/rabbitmq.module";
 import { Module } from "@nestjs/common";
 import { PhotoGalleryModule } from "./photoGallery/photoGallery.module";
 import { BlogPostModule } from "./blogPost/blogPost.module";
@@ -8,6 +9,7 @@ import { TestimonialModule } from "./testimonial/testimonial.module";
 import { HealthModule } from "./health/health.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { SecretsManagerModule } from "./providers/secrets/secretsManager.module";
+import { StorageModule } from "./storage/storage.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { ServeStaticOptionsService } from "./serveStaticOptions.service";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -17,6 +19,8 @@ import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo";
 @Module({
   controllers: [],
   imports: [
+    StorageModule,
+    RabbitMQModule,
     PhotoGalleryModule,
     BlogPostModule,
     AppointmentModule,

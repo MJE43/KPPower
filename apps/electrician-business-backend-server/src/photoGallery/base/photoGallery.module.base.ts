@@ -10,9 +10,9 @@ https://docs.amplication.com/how-to/custom-code
 ------------------------------------------------------------------------------
   */
 import { Module } from "@nestjs/common";
-
+import { StorageModule } from "src/storage/storage.module";
 @Module({
-  imports: [],
-  exports: [],
+  imports: [StorageModule],
+  exports: [StorageModule],
 })
 export class PhotoGalleryModuleBase {}
