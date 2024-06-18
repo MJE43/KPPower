@@ -29,6 +29,14 @@ import { TestimonialList } from "./testimonial/TestimonialList";
 import { TestimonialCreate } from "./testimonial/TestimonialCreate";
 import { TestimonialEdit } from "./testimonial/TestimonialEdit";
 import { TestimonialShow } from "./testimonial/TestimonialShow";
+import { UserList } from "./user/UserList";
+import { UserCreate } from "./user/UserCreate";
+import { UserEdit } from "./user/UserEdit";
+import { UserShow } from "./user/UserShow";
+import { AppUserList } from "./appUser/AppUserList";
+import { AppUserCreate } from "./appUser/AppUserCreate";
+import { AppUserEdit } from "./appUser/AppUserEdit";
+import { AppUserShow } from "./appUser/AppUserShow";
 import { jwtAuthProvider } from "./auth-provider/ra-auth-jwt";
 
 const App = (): React.ReactElement => {
@@ -96,6 +104,20 @@ const App = (): React.ReactElement => {
           edit={TestimonialEdit}
           create={TestimonialCreate}
           show={TestimonialShow}
+        />
+        <Resource
+          name="User"
+          list={UserList}
+          edit={UserEdit}
+          create={UserCreate}
+          show={UserShow}
+        />
+        <Resource
+          name="AppUser"
+          list={AppUserList}
+          edit={AppUserEdit}
+          create={AppUserCreate}
+          show={AppUserShow}
         />
       </Admin>
     </div>

@@ -6,6 +6,8 @@ import { AppointmentModule } from "./appointment/appointment.module";
 import { ContactFormModule } from "./contactForm/contactForm.module";
 import { ServiceAreaModule } from "./serviceArea/serviceArea.module";
 import { TestimonialModule } from "./testimonial/testimonial.module";
+import { UserModule } from "./user/user.module";
+import { AppUserModule } from "./appUser/appUser.module";
 import { HealthModule } from "./health/health.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { SecretsManagerModule } from "./providers/secrets/secretsManager.module";
@@ -16,17 +18,24 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { GraphQLModule } from "@nestjs/graphql";
 import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo";
 
+import { ACLModule } from "./auth/acl.module";
+import { AuthModule } from "./auth/auth.module";
+
 @Module({
   controllers: [],
   imports: [
     StorageModule,
     RabbitMQModule,
+    ACLModule,
+    AuthModule,
     PhotoGalleryModule,
     BlogPostModule,
     AppointmentModule,
     ContactFormModule,
     ServiceAreaModule,
     TestimonialModule,
+    UserModule,
+    AppUserModule,
     HealthModule,
     PrismaModule,
     SecretsManagerModule,

@@ -16,18 +16,36 @@ import * as errors from "../../errors";
 import { Request, Response } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { PhotoGalleryService } from "../photoGallery.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { PhotoGalleryCreateInput } from "./PhotoGalleryCreateInput";
 import { PhotoGallery } from "./PhotoGallery";
 import { PhotoGalleryFindManyArgs } from "./PhotoGalleryFindManyArgs";
 import { PhotoGalleryWhereUniqueInput } from "./PhotoGalleryWhereUniqueInput";
 import { PhotoGalleryUpdateInput } from "./PhotoGalleryUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class PhotoGalleryControllerBase {
-  constructor(protected readonly service: PhotoGalleryService) {}
+  constructor(
+    protected readonly service: PhotoGalleryService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: PhotoGallery })
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async createPhotoGallery(
     @common.Body() data: PhotoGalleryCreateInput
   ): Promise<PhotoGallery> {
@@ -44,9 +62,18 @@ export class PhotoGalleryControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [PhotoGallery] })
   @ApiNestedQuery(PhotoGalleryFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async photoGalleries(
     @common.Req() request: Request
   ): Promise<PhotoGallery[]> {
@@ -64,9 +91,18 @@ export class PhotoGalleryControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: PhotoGallery })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async photoGallery(
     @common.Param() params: PhotoGalleryWhereUniqueInput
   ): Promise<PhotoGallery | null> {
@@ -89,9 +125,18 @@ export class PhotoGalleryControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: PhotoGallery })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async updatePhotoGallery(
     @common.Param() params: PhotoGalleryWhereUniqueInput,
     @common.Body() data: PhotoGalleryUpdateInput
@@ -122,6 +167,14 @@ export class PhotoGalleryControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: PhotoGallery })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deletePhotoGallery(
     @common.Param() params: PhotoGalleryWhereUniqueInput
   ): Promise<PhotoGallery | null> {

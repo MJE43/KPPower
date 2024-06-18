@@ -63,3 +63,29 @@ model Testimonial {
   testimonialText String?
   updatedAt       DateTime @updatedAt
 }
+
+model User {
+  createdAt DateTime @default(now())
+  email     String?  @unique
+  firstName String?
+  id        String   @id @default(cuid())
+  lastName  String?
+  password  String
+  roles     Json
+  updatedAt DateTime @updatedAt
+  username  String   @unique
+}
+
+model AppUser {
+  createdAt DateTime         @default(now())
+  email     String?
+  id        String           @id @default(cuid())
+  password  String?
+  role      EnumAppUserRole?
+  updatedAt DateTime         @updatedAt
+  username  String?
+}
+
+enum EnumAppUserRole {
+  Option1
+}

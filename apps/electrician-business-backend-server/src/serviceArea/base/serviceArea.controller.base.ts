@@ -16,17 +16,35 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { ServiceAreaService } from "../serviceArea.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { ServiceAreaCreateInput } from "./ServiceAreaCreateInput";
 import { ServiceArea } from "./ServiceArea";
 import { ServiceAreaFindManyArgs } from "./ServiceAreaFindManyArgs";
 import { ServiceAreaWhereUniqueInput } from "./ServiceAreaWhereUniqueInput";
 import { ServiceAreaUpdateInput } from "./ServiceAreaUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class ServiceAreaControllerBase {
-  constructor(protected readonly service: ServiceAreaService) {}
+  constructor(
+    protected readonly service: ServiceAreaService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: ServiceArea })
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async createServiceArea(
     @common.Body() data: ServiceAreaCreateInput
   ): Promise<ServiceArea> {
@@ -43,9 +61,18 @@ export class ServiceAreaControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [ServiceArea] })
   @ApiNestedQuery(ServiceAreaFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async serviceAreas(@common.Req() request: Request): Promise<ServiceArea[]> {
     const args = plainToClass(ServiceAreaFindManyArgs, request.query);
     return this.service.serviceAreas({
@@ -61,9 +88,18 @@ export class ServiceAreaControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: ServiceArea })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async serviceArea(
     @common.Param() params: ServiceAreaWhereUniqueInput
   ): Promise<ServiceArea | null> {
@@ -86,9 +122,18 @@ export class ServiceAreaControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: ServiceArea })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async updateServiceArea(
     @common.Param() params: ServiceAreaWhereUniqueInput,
     @common.Body() data: ServiceAreaUpdateInput
@@ -119,6 +164,14 @@ export class ServiceAreaControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: ServiceArea })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteServiceArea(
     @common.Param() params: ServiceAreaWhereUniqueInput
   ): Promise<ServiceArea | null> {

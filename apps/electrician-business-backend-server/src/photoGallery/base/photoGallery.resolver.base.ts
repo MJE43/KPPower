@@ -13,8 +13,14 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
 import { GraphQLUpload } from "graphql-upload";
 import { FileUpload } from "src/storage/base/storage.types";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { PhotoGallery } from "./PhotoGallery";
 import { PhotoGalleryCountArgs } from "./PhotoGalleryCountArgs";
 import { PhotoGalleryFindManyArgs } from "./PhotoGalleryFindManyArgs";
@@ -23,10 +29,20 @@ import { CreatePhotoGalleryArgs } from "./CreatePhotoGalleryArgs";
 import { UpdatePhotoGalleryArgs } from "./UpdatePhotoGalleryArgs";
 import { DeletePhotoGalleryArgs } from "./DeletePhotoGalleryArgs";
 import { PhotoGalleryService } from "../photoGallery.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => PhotoGallery)
 export class PhotoGalleryResolverBase {
-  constructor(protected readonly service: PhotoGalleryService) {}
+  constructor(
+    protected readonly service: PhotoGalleryService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @graphql.Query(() => MetaQueryPayload)
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "read",
+    possession: "any",
+  })
   async _photoGalleriesMeta(
     @graphql.Args() args: PhotoGalleryCountArgs
   ): Promise<MetaQueryPayload> {
@@ -36,14 +52,26 @@ export class PhotoGalleryResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [PhotoGallery])
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "read",
+    possession: "any",
+  })
   async photoGalleries(
     @graphql.Args() args: PhotoGalleryFindManyArgs
   ): Promise<PhotoGallery[]> {
     return this.service.photoGalleries(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => PhotoGallery, { nullable: true })
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "read",
+    possession: "own",
+  })
   async photoGallery(
     @graphql.Args() args: PhotoGalleryFindUniqueArgs
   ): Promise<PhotoGallery | null> {
@@ -54,7 +82,13 @@ export class PhotoGalleryResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => PhotoGallery)
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "create",
+    possession: "any",
+  })
   async createPhotoGallery(
     @graphql.Args() args: CreatePhotoGalleryArgs
   ): Promise<PhotoGallery> {
@@ -64,7 +98,13 @@ export class PhotoGalleryResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => PhotoGallery)
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "update",
+    possession: "any",
+  })
   async updatePhotoGallery(
     @graphql.Args() args: UpdatePhotoGalleryArgs
   ): Promise<PhotoGallery | null> {
@@ -84,6 +124,11 @@ export class PhotoGalleryResolverBase {
   }
 
   @graphql.Mutation(() => PhotoGallery)
+  @nestAccessControl.UseRoles({
+    resource: "PhotoGallery",
+    action: "delete",
+    possession: "any",
+  })
   async deletePhotoGallery(
     @graphql.Args() args: DeletePhotoGalleryArgs
   ): Promise<PhotoGallery | null> {

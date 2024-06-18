@@ -13,6 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { Testimonial } from "./Testimonial";
 import { TestimonialCountArgs } from "./TestimonialCountArgs";
 import { TestimonialFindManyArgs } from "./TestimonialFindManyArgs";
@@ -21,10 +27,20 @@ import { CreateTestimonialArgs } from "./CreateTestimonialArgs";
 import { UpdateTestimonialArgs } from "./UpdateTestimonialArgs";
 import { DeleteTestimonialArgs } from "./DeleteTestimonialArgs";
 import { TestimonialService } from "../testimonial.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => Testimonial)
 export class TestimonialResolverBase {
-  constructor(protected readonly service: TestimonialService) {}
+  constructor(
+    protected readonly service: TestimonialService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @graphql.Query(() => MetaQueryPayload)
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "read",
+    possession: "any",
+  })
   async _testimonialsMeta(
     @graphql.Args() args: TestimonialCountArgs
   ): Promise<MetaQueryPayload> {
@@ -34,14 +50,26 @@ export class TestimonialResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [Testimonial])
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "read",
+    possession: "any",
+  })
   async testimonials(
     @graphql.Args() args: TestimonialFindManyArgs
   ): Promise<Testimonial[]> {
     return this.service.testimonials(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => Testimonial, { nullable: true })
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "read",
+    possession: "own",
+  })
   async testimonial(
     @graphql.Args() args: TestimonialFindUniqueArgs
   ): Promise<Testimonial | null> {
@@ -52,7 +80,13 @@ export class TestimonialResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Testimonial)
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "create",
+    possession: "any",
+  })
   async createTestimonial(
     @graphql.Args() args: CreateTestimonialArgs
   ): Promise<Testimonial> {
@@ -62,7 +96,13 @@ export class TestimonialResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => Testimonial)
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "update",
+    possession: "any",
+  })
   async updateTestimonial(
     @graphql.Args() args: UpdateTestimonialArgs
   ): Promise<Testimonial | null> {
@@ -82,6 +122,11 @@ export class TestimonialResolverBase {
   }
 
   @graphql.Mutation(() => Testimonial)
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "delete",
+    possession: "any",
+  })
   async deleteTestimonial(
     @graphql.Args() args: DeleteTestimonialArgs
   ): Promise<Testimonial | null> {

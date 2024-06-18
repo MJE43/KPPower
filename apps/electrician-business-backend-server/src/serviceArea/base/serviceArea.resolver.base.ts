@@ -13,6 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { ServiceArea } from "./ServiceArea";
 import { ServiceAreaCountArgs } from "./ServiceAreaCountArgs";
 import { ServiceAreaFindManyArgs } from "./ServiceAreaFindManyArgs";
@@ -21,10 +27,20 @@ import { CreateServiceAreaArgs } from "./CreateServiceAreaArgs";
 import { UpdateServiceAreaArgs } from "./UpdateServiceAreaArgs";
 import { DeleteServiceAreaArgs } from "./DeleteServiceAreaArgs";
 import { ServiceAreaService } from "../serviceArea.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => ServiceArea)
 export class ServiceAreaResolverBase {
-  constructor(protected readonly service: ServiceAreaService) {}
+  constructor(
+    protected readonly service: ServiceAreaService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @graphql.Query(() => MetaQueryPayload)
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "read",
+    possession: "any",
+  })
   async _serviceAreasMeta(
     @graphql.Args() args: ServiceAreaCountArgs
   ): Promise<MetaQueryPayload> {
@@ -34,14 +50,26 @@ export class ServiceAreaResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [ServiceArea])
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "read",
+    possession: "any",
+  })
   async serviceAreas(
     @graphql.Args() args: ServiceAreaFindManyArgs
   ): Promise<ServiceArea[]> {
     return this.service.serviceAreas(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => ServiceArea, { nullable: true })
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "read",
+    possession: "own",
+  })
   async serviceArea(
     @graphql.Args() args: ServiceAreaFindUniqueArgs
   ): Promise<ServiceArea | null> {
@@ -52,7 +80,13 @@ export class ServiceAreaResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => ServiceArea)
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "create",
+    possession: "any",
+  })
   async createServiceArea(
     @graphql.Args() args: CreateServiceAreaArgs
   ): Promise<ServiceArea> {
@@ -62,7 +96,13 @@ export class ServiceAreaResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => ServiceArea)
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "update",
+    possession: "any",
+  })
   async updateServiceArea(
     @graphql.Args() args: UpdateServiceAreaArgs
   ): Promise<ServiceArea | null> {
@@ -82,6 +122,11 @@ export class ServiceAreaResolverBase {
   }
 
   @graphql.Mutation(() => ServiceArea)
+  @nestAccessControl.UseRoles({
+    resource: "ServiceArea",
+    action: "delete",
+    possession: "any",
+  })
   async deleteServiceArea(
     @graphql.Args() args: DeleteServiceAreaArgs
   ): Promise<ServiceArea | null> {

@@ -16,17 +16,35 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { TestimonialService } from "../testimonial.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { TestimonialCreateInput } from "./TestimonialCreateInput";
 import { Testimonial } from "./Testimonial";
 import { TestimonialFindManyArgs } from "./TestimonialFindManyArgs";
 import { TestimonialWhereUniqueInput } from "./TestimonialWhereUniqueInput";
 import { TestimonialUpdateInput } from "./TestimonialUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class TestimonialControllerBase {
-  constructor(protected readonly service: TestimonialService) {}
+  constructor(
+    protected readonly service: TestimonialService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: Testimonial })
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async createTestimonial(
     @common.Body() data: TestimonialCreateInput
   ): Promise<Testimonial> {
@@ -43,9 +61,18 @@ export class TestimonialControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [Testimonial] })
   @ApiNestedQuery(TestimonialFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async testimonials(@common.Req() request: Request): Promise<Testimonial[]> {
     const args = plainToClass(TestimonialFindManyArgs, request.query);
     return this.service.testimonials({
@@ -61,9 +88,18 @@ export class TestimonialControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: Testimonial })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async testimonial(
     @common.Param() params: TestimonialWhereUniqueInput
   ): Promise<Testimonial | null> {
@@ -86,9 +122,18 @@ export class TestimonialControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: Testimonial })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async updateTestimonial(
     @common.Param() params: TestimonialWhereUniqueInput,
     @common.Body() data: TestimonialUpdateInput
@@ -119,6 +164,14 @@ export class TestimonialControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: Testimonial })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "Testimonial",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteTestimonial(
     @common.Param() params: TestimonialWhereUniqueInput
   ): Promise<Testimonial | null> {

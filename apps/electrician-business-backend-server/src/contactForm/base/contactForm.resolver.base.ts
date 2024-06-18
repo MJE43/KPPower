@@ -13,6 +13,12 @@ import * as graphql from "@nestjs/graphql";
 import { GraphQLError } from "graphql";
 import { isRecordNotFoundError } from "../../prisma.util";
 import { MetaQueryPayload } from "../../util/MetaQueryPayload";
+import * as nestAccessControl from "nest-access-control";
+import * as gqlACGuard from "../../auth/gqlAC.guard";
+import { GqlDefaultAuthGuard } from "../../auth/gqlDefaultAuth.guard";
+import * as common from "@nestjs/common";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
 import { ContactForm } from "./ContactForm";
 import { ContactFormCountArgs } from "./ContactFormCountArgs";
 import { ContactFormFindManyArgs } from "./ContactFormFindManyArgs";
@@ -21,10 +27,20 @@ import { CreateContactFormArgs } from "./CreateContactFormArgs";
 import { UpdateContactFormArgs } from "./UpdateContactFormArgs";
 import { DeleteContactFormArgs } from "./DeleteContactFormArgs";
 import { ContactFormService } from "../contactForm.service";
+@common.UseGuards(GqlDefaultAuthGuard, gqlACGuard.GqlACGuard)
 @graphql.Resolver(() => ContactForm)
 export class ContactFormResolverBase {
-  constructor(protected readonly service: ContactFormService) {}
+  constructor(
+    protected readonly service: ContactFormService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
 
+  @graphql.Query(() => MetaQueryPayload)
+  @nestAccessControl.UseRoles({
+    resource: "ContactForm",
+    action: "read",
+    possession: "any",
+  })
   async _contactFormsMeta(
     @graphql.Args() args: ContactFormCountArgs
   ): Promise<MetaQueryPayload> {
@@ -34,14 +50,26 @@ export class ContactFormResolverBase {
     };
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => [ContactForm])
+  @nestAccessControl.UseRoles({
+    resource: "ContactForm",
+    action: "read",
+    possession: "any",
+  })
   async contactForms(
     @graphql.Args() args: ContactFormFindManyArgs
   ): Promise<ContactForm[]> {
     return this.service.contactForms(args);
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @graphql.Query(() => ContactForm, { nullable: true })
+  @nestAccessControl.UseRoles({
+    resource: "ContactForm",
+    action: "read",
+    possession: "own",
+  })
   async contactForm(
     @graphql.Args() args: ContactFormFindUniqueArgs
   ): Promise<ContactForm | null> {
@@ -52,7 +80,13 @@ export class ContactFormResolverBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => ContactForm)
+  @nestAccessControl.UseRoles({
+    resource: "ContactForm",
+    action: "create",
+    possession: "any",
+  })
   async createContactForm(
     @graphql.Args() args: CreateContactFormArgs
   ): Promise<ContactForm> {
@@ -62,7 +96,13 @@ export class ContactFormResolverBase {
     });
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @graphql.Mutation(() => ContactForm)
+  @nestAccessControl.UseRoles({
+    resource: "ContactForm",
+    action: "update",
+    possession: "any",
+  })
   async updateContactForm(
     @graphql.Args() args: UpdateContactFormArgs
   ): Promise<ContactForm | null> {
@@ -82,6 +122,11 @@ export class ContactFormResolverBase {
   }
 
   @graphql.Mutation(() => ContactForm)
+  @nestAccessControl.UseRoles({
+    resource: "ContactForm",
+    action: "delete",
+    possession: "any",
+  })
   async deleteContactForm(
     @graphql.Args() args: DeleteContactFormArgs
   ): Promise<ContactForm | null> {

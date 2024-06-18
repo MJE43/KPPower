@@ -16,17 +16,35 @@ import * as errors from "../../errors";
 import { Request } from "express";
 import { plainToClass } from "class-transformer";
 import { ApiNestedQuery } from "../../decorators/api-nested-query.decorator";
+import * as nestAccessControl from "nest-access-control";
+import * as defaultAuthGuard from "../../auth/defaultAuth.guard";
 import { BlogPostService } from "../blogPost.service";
+import { AclValidateRequestInterceptor } from "../../interceptors/aclValidateRequest.interceptor";
+import { AclFilterResponseInterceptor } from "../../interceptors/aclFilterResponse.interceptor";
 import { BlogPostCreateInput } from "./BlogPostCreateInput";
 import { BlogPost } from "./BlogPost";
 import { BlogPostFindManyArgs } from "./BlogPostFindManyArgs";
 import { BlogPostWhereUniqueInput } from "./BlogPostWhereUniqueInput";
 import { BlogPostUpdateInput } from "./BlogPostUpdateInput";
 
+@swagger.ApiBearerAuth()
+@common.UseGuards(defaultAuthGuard.DefaultAuthGuard, nestAccessControl.ACGuard)
 export class BlogPostControllerBase {
-  constructor(protected readonly service: BlogPostService) {}
+  constructor(
+    protected readonly service: BlogPostService,
+    protected readonly rolesBuilder: nestAccessControl.RolesBuilder
+  ) {}
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Post()
   @swagger.ApiCreatedResponse({ type: BlogPost })
+  @nestAccessControl.UseRoles({
+    resource: "BlogPost",
+    action: "create",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async createBlogPost(
     @common.Body() data: BlogPostCreateInput
   ): Promise<BlogPost> {
@@ -44,9 +62,18 @@ export class BlogPostControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get()
   @swagger.ApiOkResponse({ type: [BlogPost] })
   @ApiNestedQuery(BlogPostFindManyArgs)
+  @nestAccessControl.UseRoles({
+    resource: "BlogPost",
+    action: "read",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async blogPosts(@common.Req() request: Request): Promise<BlogPost[]> {
     const args = plainToClass(BlogPostFindManyArgs, request.query);
     return this.service.blogPosts({
@@ -63,9 +90,18 @@ export class BlogPostControllerBase {
     });
   }
 
+  @common.UseInterceptors(AclFilterResponseInterceptor)
   @common.Get("/:id")
   @swagger.ApiOkResponse({ type: BlogPost })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "BlogPost",
+    action: "read",
+    possession: "own",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async blogPost(
     @common.Param() params: BlogPostWhereUniqueInput
   ): Promise<BlogPost | null> {
@@ -89,9 +125,18 @@ export class BlogPostControllerBase {
     return result;
   }
 
+  @common.UseInterceptors(AclValidateRequestInterceptor)
   @common.Patch("/:id")
   @swagger.ApiOkResponse({ type: BlogPost })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "BlogPost",
+    action: "update",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async updateBlogPost(
     @common.Param() params: BlogPostWhereUniqueInput,
     @common.Body() data: BlogPostUpdateInput
@@ -123,6 +168,14 @@ export class BlogPostControllerBase {
   @common.Delete("/:id")
   @swagger.ApiOkResponse({ type: BlogPost })
   @swagger.ApiNotFoundResponse({ type: errors.NotFoundException })
+  @nestAccessControl.UseRoles({
+    resource: "BlogPost",
+    action: "delete",
+    possession: "any",
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
   async deleteBlogPost(
     @common.Param() params: BlogPostWhereUniqueInput
   ): Promise<BlogPost | null> {
