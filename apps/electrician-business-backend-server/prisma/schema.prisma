@@ -1,0 +1,91 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model PhotoGallery {
+  createdAt   DateTime @default(now())
+  description String?
+  id          String   @id @default(cuid())
+  imageUrl    Json?
+  title       String?
+  updatedAt   DateTime @updatedAt
+}
+
+model BlogPost {
+  author          String?
+  content         String?
+  createdAt       DateTime  @default(now())
+  id              String    @id @default(cuid())
+  publicationDate DateTime?
+  title           String?
+  updatedAt       DateTime  @updatedAt
+}
+
+model Appointment {
+  appointmentDate  DateTime?
+  createdAt        DateTime  @default(now())
+  customerEmail    String?
+  customerName     String?
+  id               String    @id @default(cuid())
+  serviceRequested String?
+  updatedAt        DateTime  @updatedAt
+}
+
+model ContactForm {
+  createdAt   DateTime @default(now())
+  email       String?
+  id          String   @id @default(cuid())
+  message     String?
+  name        String?
+  phoneNumber String?
+  updatedAt   DateTime @updatedAt
+}
+
+model ServiceArea {
+  areaName    String?
+  areaZipCode String?
+  createdAt   DateTime @default(now())
+  id          String   @id @default(cuid())
+  mapUrl      String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  createdAt       DateTime @default(now())
+  customerName    String?
+  id              String   @id @default(cuid())
+  rating          Int?
+  testimonialText String?
+  updatedAt       DateTime @updatedAt
+}
+
+model User {
+  createdAt DateTime @default(now())
+  email     String?  @unique
+  firstName String?
+  id        String   @id @default(cuid())
+  lastName  String?
+  password  String
+  roles     Json
+  updatedAt DateTime @updatedAt
+  username  String   @unique
+}
+
+model AppUser {
+  createdAt DateTime         @default(now())
+  email     String?
+  id        String           @id @default(cuid())
+  password  String?
+  role      EnumAppUserRole?
+  updatedAt DateTime         @updatedAt
+  username  String?
+}
+
+enum EnumAppUserRole {
+  Option1
+}
